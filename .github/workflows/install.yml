@@ -38,6 +38,10 @@ jobs:
       - name: Install again (must be idempotent)
         run: ~/code/dotfiles/install.sh --claude
 
+      - name: Put Homebrew on PATH for the next steps
+        if: runner.os == 'Linux' && !matrix.no_brew
+        run: echo /home/linuxbrew/.linuxbrew/bin >> "$GITHUB_PATH"
+
       - name: Links point into the repo
         run: |
           for f in .zshrc .gitconfig .tmux.conf .config/tmux .config/nvim .config/ghostty/config \
@@ -70,7 +74,6 @@ jobs:
       - name: Neovim config loads
         if: ${{ !matrix.no_brew }}
         run: |
-          [ -z "$HOMEBREW_PREFIX" ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv 2>/dev/null || true)"
           nvim --headless "+Lazy! sync" +qa
           out=$(nvim --headless +qa 2>&1)
           echo "$out"
