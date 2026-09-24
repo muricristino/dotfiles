@@ -1,5 +1,5 @@
-# Homebrew (Apple Silicon or Intel)
-for brew in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+# Homebrew (macOS Apple Silicon/Intel, or Linux)
+for brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
   [ -x "$brew" ] && { eval "$("$brew" shellenv)"; break; }
 done
 
