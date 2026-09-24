@@ -3,7 +3,7 @@
 # U+F0E7=bolt  U+F121=code  U+F201=chart  U+F544=robot  U+E235=python  U+F233=server  U+F07B=folder
 session="$1"
 
-# Overrides desta máquina: ~/.config/tmux/session-icon.local (não versionado)
+# Machine-local overrides: ~/.config/tmux/session-icon.local (not versioned)
 local_icons="$(dirname "$0")/session-icon.local"
 if [ -f "$local_icons" ]; then
   icon=$(. "$local_icons")

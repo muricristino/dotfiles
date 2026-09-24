@@ -1,15 +1,15 @@
 #!/bin/sh
-# Copia a seleção do tmux pro clipboard com três ajustes:
-#  1) DEDENT: remove a indentação mínima comum (mata a "margem" do Claude Code).
-#  2) HEAL:   o tmux já re-junta o wrap do terminal; o que chega quebrado é o
-#             soft-wrap do Claude Code, que emite \n de verdade. Dois casos:
-#             (a) corte no meio de um token — a linha bate na largura de render
-#                 (várias linhas no mesmo comprimento máximo): junta SEM espaço.
-#             (b) corte num espaço porque a próxima palavra não cabia: junta
-#                 COM espaço.
-#             Quebra intencional (a palavra seguinte CABIA, ou a linha termina
-#             em "\") nunca é tocada. Sem evidência de wrap, não mexe em nada.
-#  3) AVISO:  mostra no status bar quanto foi copiado e quantas quebras uniu.
+# Copies the tmux selection to the clipboard with three adjustments:
+#  1) DEDENT: strips the common minimum indentation (kills Claude Code's "margin").
+#  2) HEAL:   tmux already rejoins terminal wrapping; what arrives broken is
+#             Claude Code's soft-wrap, which emits real \n. Two cases:
+#             (a) cut mid-token — the line hits the render width (several
+#                 lines at the same max length): join WITHOUT a space.
+#             (b) cut at a space because the next word didn't fit: join
+#                 WITH a space.
+#             Intentional breaks (the next word WOULD have fit, or the line
+#             ends in "\") are never touched. No wrap evidence, no changes.
+#  3) NOTICE: shows in the status bar how much was copied and how many breaks were joined.
 LC_ALL=${LC_ALL:-en_US.UTF-8}; export LC_ALL
 
 W=$(tmux display-message -p '#{pane_width}' 2>/dev/null)
@@ -18,8 +18,8 @@ case "$W" in ''|*[!0-9]*) W=0 ;; esac
 IN=$(cat)
 
 OUT=$(printf '%s\n' "$IN" | awk -v W="$W" '
-# Token de prosa: só letras (hífen ok), com um sinal de pontuação no fim.
-# Qualquer coisa com dígito, aspas, barra, ponto interno etc. é código.
+# Prose token: letters only (hyphen ok), with one trailing punctuation mark.
+# Anything with a digit, quote, slash, inner dot etc. is code.
 function plain(t,   x) {
   x = t
   sub(/[.,;:!?)]$/, "", x)
@@ -44,16 +44,16 @@ END {
     sub(/[[:space:]]+$/, "", t)
     c++; d[c] = t
     len[c]  = olen[i]
-    bs[c]   = (t ~ /\\$/)                 # continuação de shell -> intencional
-    lead[c] = (t ~ /^[[:space:]]/)        # indentada (após dedent) -> intencional
+    bs[c]   = (t ~ /\\$/)                 # shell continuation -> intentional
+    lead[c] = (t ~ /^[[:space:]]/)        # indented (after dedent) -> intentional
   }
 
-  # Quantas linhas param no comprimento máximo (marca da coluna de render).
+  # How many lines stop at the max length (marks the render column).
   nmax = 0
   for (i = 1; i <= c; i++) if (len[i] == wmax) nmax++
 
-  # Wrap guloso consistente: se ALGUMA quebra poderia ter cabido na linha
-  # anterior, ela foi intencional e o bloco não é um parágrafo quebrado.
+  # Consistent greedy wrap: if ANY break could have fit on the previous
+  # line, it was intentional and the block is not a wrapped paragraph.
   greedy = 1
   for (i = 1; i < c; i++) {
     if (d[i+1] == "" || bs[i] || lead[i+1]) continue
@@ -61,32 +61,32 @@ END {
     if (len[i] + 1 + length(fw) <= wmax) { greedy = 0; break }
   }
 
-  # Evidência de que a tela quebrou o bloco. Piso de 30 colunas descarta
-  # listas e textos curtos.
+  # Evidence that the screen wrapped the block. A 30-column floor rules out
+  # lists and short text.
   wrapped = (wmax >= 30 && (nmax >= 2 || (W > 0 && wmax >= W - 6) || greedy))
 
   i = 1
   while (i <= c) {
-    cur = d[i]; k = i                                     # k = última absorvida
+    cur = d[i]; k = i                                     # k = last absorbed
     while (i < c) {
       nxt = d[i+1]
-      if (nxt == "" || bs[k]) break                       # vazia ou "\" -> para
-      nx = nxt; sub(/^[[:space:]]+/, "", nx)              # sem a margem/indent
-      fw = nx;  sub(/[[:space:]].*/, "", fw)              # 1ª palavra da próxima
+      if (nxt == "" || bs[k]) break                       # empty or "\" -> stop
+      nx = nxt; sub(/^[[:space:]]+/, "", nx)              # without margin/indent
+      fw = nx;  sub(/[[:space:]].*/, "", fw)              # first word of next line
 
       joined = 0
       if (wrapped && len[k] >= wmax) {
-        # Linha CHEIA: o corte foi no meio do token, indentação da próxima é
-        # só margem de render. Exceção: prosa dos dois lados -> corte por
-        # palavra que por acaso encheu a linha.
+        # FULL line: the cut was mid-token, the indentation of the next line is
+        # just render margin. Exception: prose on both sides -> a word-boundary
+        # cut that happened to fill the line.
         lt = d[k]; sub(/.*[[:space:]]/, "", lt)
         sep = (plain(lt) && plain(fw)) ? " " : ""
         cur = cur sep nx; joined = 1
       } else if (wrapped && !lead[i+1] && len[k] + 1 + length(fw) > wmax) {
-        cur = cur " " nxt; joined = 1                     # corte entre palavras
+        cur = cur " " nxt; joined = 1                     # cut between words
       } else if (len[k] >= 30 && nx !~ /[[:space:]]/) {
-        # fallback URL/path: linha longa terminando num token com "/" seguida
-        # de um token único (mesmo indentado) -> continuação.
+        # URL/path fallback: long line ending in a token with "/" followed
+        # by a single token (even if indented) -> continuation.
         lt = cur; sub(/.*[[:space:]]/, "", lt)
         if (lt ~ /\//) { cur = cur nx; joined = 1 }
       }
@@ -107,6 +107,6 @@ joins=$((in_l - out_l))
 [ "$joins" -lt 0 ] && joins=0
 
 icon=$(printf '\xef\x83\x85')
-msg="$icon copiado · ${out_l} linha(s) · ${chars} chars"
-[ "$joins" -gt 0 ] && msg="$msg · ${joins} quebra(s) unida(s)"
+msg="$icon copied · ${out_l} line(s) · ${chars} chars"
+[ "$joins" -gt 0 ] && msg="$msg · ${joins} break(s) joined"
 tmux display-message "$msg" 2>/dev/null

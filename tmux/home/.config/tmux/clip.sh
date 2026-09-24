@@ -1,6 +1,6 @@
 #!/bin/sh
-# Clipboard portátil: `clip.sh copy` lê o stdin, `clip.sh paste` escreve no stdout.
-# macOS (pbcopy), Wayland (wl-copy) ou X11 (xclip).
+# Portable clipboard: `clip.sh copy` reads stdin, `clip.sh paste` writes to stdout.
+# macOS (pbcopy), Wayland (wl-copy) or X11 (xclip).
 case "$1" in
   copy)
     if   command -v pbcopy  >/dev/null; then pbcopy
@@ -12,5 +12,5 @@ case "$1" in
     elif command -v wl-paste >/dev/null; then wl-paste --no-newline
     elif command -v xclip    >/dev/null; then xclip -selection clipboard -o
     fi ;;
-  *) echo "uso: clip.sh copy|paste" >&2; exit 2 ;;
+  *) echo "usage: clip.sh copy|paste" >&2; exit 2 ;;
 esac
