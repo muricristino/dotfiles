@@ -12,7 +12,7 @@ ZSH_THEME="refined"
 
 plugins=(git vi-mode zsh-syntax-highlighting zsh-autosuggestions)
 
-# vi-mode cursor shapes (deve vir antes do source omz)
+# vi-mode cursor shapes (must come before sourcing omz)
 VI_MODE_SET_CURSOR=true
 MODE_CURSOR_VICMD="steady block"
 MODE_CURSOR_VIINS="steady bar"
@@ -20,18 +20,18 @@ MODE_CURSOR_SEARCH="steady underline"
 
 source $ZSH/oh-my-zsh.sh
 
-# Comentários: o padrão do plugin é fg=black (cor 0), ilegível no fundo escuro
+# Comments: the plugin default is fg=black (color 0), unreadable on a dark background
 ZSH_HIGHLIGHT_STYLES[comment]='fg=#928374'
 
-# Shift+Enter (ESC+CR, vindo do keybind do Ghostty): quebra linha sem executar
+# Shift+Enter (ESC+CR, sent by the Ghostty keybind): insert a newline without executing
 _insert_newline() { LBUFFER+=$'\n' }
 zle -N _insert_newline
 bindkey -M viins '^[^M' _insert_newline
 bindkey -M vicmd '^[^M' _insert_newline
 bindkey -M emacs '^[^M' _insert_newline
 
-# Cmd+V chega como ^V (keybind do Ghostty): cola o clipboard no buffer.
-# O quoted-insert original (inserir caractere literal) migra pro ^Q.
+# Cmd+V arrives as ^V (Ghostty keybind): paste the clipboard into the buffer.
+# The original quoted-insert (insert a literal character) moves to ^Q.
 if (( $+commands[pbpaste] )); then
   _paste_clipboard() { LBUFFER+="$(pbpaste)" }
   zle -N _paste_clipboard
@@ -74,23 +74,23 @@ fi
 alias s="ls"
 alias yolo="claude --dangerously-skip-permissions"
 
-# Mata todos os processos escutando em portas TCP
+# Kill every process listening on a TCP port
 function chacina() {
   local pids=$(lsof -tiTCP -sTCP:LISTEN | sort -u)
   if [[ -z "$pids" ]]; then
-    echo "Nenhum processo escutando portas."
+    echo "No processes listening on ports."
   else
-    echo "Matando processos na porta:\n$pids"
+    echo "Killing processes on ports:\n$pids"
     kill -9 ${(f)pids}
-    echo "Feito."
+    echo "Done."
   fi
 
-  # Mata copilot-language-server zumbis (mantém só o mais recente)
+  # Kill zombie copilot-language-server processes (keep only the newest)
   local copilot_pids=(${(f)$(pgrep -f "copilot-language-server" | sort -n)})
   local count=${#copilot_pids}
   if [[ $count -gt 1 ]]; then
     local zombies=(${copilot_pids[1,-2]})
-    echo "Matando $((count - 1)) copilot zumbi(s): $zombies"
+    echo "Killing $((count - 1)) zombie copilot(s): $zombies"
     kill -9 ${zombies[@]}
   fi
 }
