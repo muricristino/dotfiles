@@ -1,4 +1,4 @@
-# Dependencies used by these dotfiles — `brew bundle` (install.sh runs it on macOS)
+# Dependencies used by these dotfiles — `brew bundle` (install.sh runs it on macOS and Linux)
 
 # core
 brew "stow"
@@ -19,9 +19,16 @@ brew "neovim"
 brew "ripgrep"     # telescope live grep
 brew "fd"          # telescope file finder
 brew "lazygit"     # lazygit.nvim
-brew "gnu-sed"     # nvim-spectre (gsed)
 brew "imagemagick" # image.nvim
 
-# terminal
-cask "ghostty"
-cask "font-jetbrains-mono-nerd-font"
+# Linux: zsh doesn't come preinstalled on most distros
+if OS.linux?
+  brew "zsh"
+end
+
+# macOS only: casks don't exist on Linux, and Linux sed is already GNU sed
+if OS.mac?
+  brew "gnu-sed"   # nvim-spectre (gsed)
+  cask "ghostty"
+  cask "font-jetbrains-mono-nerd-font"
+end

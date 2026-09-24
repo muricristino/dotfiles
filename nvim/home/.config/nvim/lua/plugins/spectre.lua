@@ -6,9 +6,10 @@ return {
     cmd = "Spectre",
     opts = {
       -- macOS ships BSD sed which breaks Spectre's replace; use gnu-sed (gsed)
+      -- when present. On Linux, sed is already GNU sed.
       replace_engine = {
         ["sed"] = {
-          cmd = "gsed",
+          cmd = vim.fn.executable("gsed") == 1 and "gsed" or "sed",
           args = nil,
         },
       },
