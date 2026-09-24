@@ -17,22 +17,37 @@ done
 
 echo "Dotfiles: $DOTFILES"
 
-# Dependencies
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  if ! command -v brew &>/dev/null; then
-    echo "Instale o Homebrew primeiro: https://brew.sh"
-    exit 1
-  fi
+# Dependencies: Homebrew on macOS and Linux; apt/dnf as a fallback on Linux
+if [[ "$OSTYPE" == "linux"* ]] && ! command -v brew &>/dev/null; then
+  for brew in /home/linuxbrew/.linuxbrew/bin/brew "$HOME/.linuxbrew/bin/brew"; do
+    [ -x "$brew" ] && eval "$("$brew" shellenv)" && break
+  done
+fi
+
+if command -v brew &>/dev/null; then
   brew bundle --file="$DOTFILES/Brewfile"
-elif ! command -v stow &>/dev/null; then
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  echo "Instale o Homebrew primeiro: https://brew.sh"
+  exit 1
+else
+  # Sem Homebrew: pacotes da distro, um por vez (nomes e disponibilidade variam).
+  # O neovim da distro pode ser antigo demais pro LazyVim; o Homebrew evita isso.
+  pkgs=(stow git zsh tmux neovim fzf jq ripgrep curl eza git-delta git-lfs gh)
   if command -v apt-get &>/dev/null; then
-    sudo apt-get install -y stow
+    sudo apt-get update -qq
+    install_pkg() { sudo apt-get install -y -qq "$1" >/dev/null; }
+    pkgs+=(fd-find)
   elif command -v dnf &>/dev/null; then
-    sudo dnf install -y stow
+    install_pkg() { sudo dnf install -y -q "$1" >/dev/null; }
+    pkgs+=(fd-find)
   else
-    echo "Instale stow manualmente: https://www.gnu.org/software/stow/"
+    echo "Instale manualmente: ${pkgs[*]}"
     exit 1
   fi
+  for pkg in "${pkgs[@]}"; do
+    install_pkg "$pkg" || echo "  aviso: $pkg não instalado"
+  done
+  command -v stow &>/dev/null || { echo "stow é obrigatório"; exit 1; }
 fi
 
 # Oh My Zsh + custom plugins
@@ -49,13 +64,9 @@ done
 # tmux plugin manager
 [ -d "$HOME/.tmux/plugins/tpm" ] || git clone --depth 1 https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
 
-# Packages to stow (skip ghostty and nvim on Linux if not relevant)
-PACKAGES=(zsh git tmux)
+# Packages to stow
+PACKAGES=(zsh git tmux nvim ghostty)
 [ -n "$CLAUDE" ] && PACKAGES+=(claude)
-
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  PACKAGES+=(ghostty nvim)
-fi
 
 # Shared parents must be real dirs, or stow folds them into the first package
 mkdir -p "$HOME/.config" "$HOME/.claude"
