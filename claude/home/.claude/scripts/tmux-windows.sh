@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# prefix + f — busca de janelas (todas as sessões) com fzf, ordenadas por
-# último acesso real (@visited, setado pelos hooks no .tmux.conf).
-# Ícones: sessão via session-icon.sh, janela via ícone de comando (window-name.sh).
+# prefix + f — fzf window search (all sessions), sorted by last real
+# visit (@visited, set by the hooks in .tmux.conf).
+# Icons: session via session-icon.sh, window via command icon (window-name.sh).
 set -uo pipefail
 
-# run-shell não tem tty: reabre dentro de um popup do tmux.
+# run-shell has no tty: reopen inside a tmux popup.
 if [[ "${1:-}" != "--popup" ]]; then
   tmux display-popup -E -w 100 -h 60% "$0 --popup"
   exit 0
@@ -15,14 +15,14 @@ export LC_ALL="${LC_ALL:-en_US.UTF-8}"
 current=$(tmux display-message -p '#{window_id}')
 ALL_PANES=$(tmux list-panes -a -F '#{window_id} #{pane_id} #{pane_current_command}')
 
-# Modo vim no fzf: começa em insert; esc entra no modo normal (j/k/g/G/d/u/q),
-# i volta pro insert. Teclas definidas no --bind e desligadas no start.
+# Vim mode in fzf: starts in insert; esc enters normal mode (j/k/g/G/d/u/q),
+# i goes back to insert. Keys are defined in --bind and unbound at start.
 VIM_KEYS='j,k,g,G,d,u,q'
 PROMPT_INS="$(printf '\xef\x80\x82') ❯ "
 PROMPT_NRM="$(printf '\xef\x80\x82') [N] ❯ "
 
-# Ícones via bytes UTF-8 explícitos (mesma técnica do session-icon.sh —
-# glifos nerd-font literais não sobrevivem a edições por ferramentas).
+# Icons via explicit UTF-8 bytes (same technique as session-icon.sh —
+# literal nerd-font glyphs don't survive edits by tools).
 cmd_icon() {
   case "$(basename "${1:-zsh}")" in
     nvim|vim)                 printf '\xee\x98\xab ' ;;  # U+E62B vim
@@ -34,7 +34,7 @@ cmd_icon() {
     docker*)                  printf '\xef\x8c\x88 ' ;;  # U+F308 docker
     ssh|mosh)                 printf '\xef\x92\x89 ' ;;  # U+F489 terminal (oct)
     htop|btop|top)            printf '\xef\x83\xa4 ' ;;  # U+F0E4 tachometer
-    opencode|aider|claude|[0-9]*.[0-9]*) printf '\xef\x95\x84 ' ;;  # U+F544 robot (claude aparece como "2.1.233")
+    opencode|aider|claude|[0-9]*.[0-9]*) printf '\xef\x95\x84 ' ;;  # U+F544 robot (claude shows up as "2.1.233")
     gh)                       printf '\xef\x82\x9b ' ;;  # U+F09B github
     make|rake)                printf '\xef\x82\xad ' ;;  # U+F0AD wrench
     psql|mysql|sqlite*)       printf '\xef\x87\x80 ' ;;  # U+F1C0 database
@@ -43,8 +43,8 @@ cmd_icon() {
   esac
 }
 
-# Status do Claude Code na janela (olha todos os panes, não só o ativo):
-#   waiting = pedindo aprovação  ·  busy = trabalhando  ·  idle = pronto
+# Claude Code status in the window (checks every pane, not just the active one):
+#   waiting = asking for approval  ·  busy = working  ·  idle = ready
 claude_status() {
   local win=$1 best="" pid pcmd tail
   grep "^$win " <<<"$ALL_PANES" |
@@ -62,7 +62,7 @@ claude_status() {
       echo "$best"; }
 }
 
-# Coluna colorida de status, largura fixa (10 chars visuais)
+# Colored status column, fixed width (10 visible chars)
 status_col() {
   local st txt color
   st=$(claude_status "$1")
@@ -75,7 +75,7 @@ status_col() {
   printf '%s%s%*s\033[0m' "$color" "$txt" $((10 - ${#txt})) ''
 }
 
-# Rótulo do grupo de tempo (minuto a minuto até 1h, depois horas/dias)
+# Time group label (per minute up to 1h, then hours/days)
 age_label() {
   local v=$1 age
   [[ "$v" -eq 0 ]] && { echo "never"; return; }
@@ -118,7 +118,7 @@ selected=$(
 win=$(cut -f1 <<<"$selected")
 session=$(cut -f2 <<<"$selected")
 
-# Enter num separador de grupo: ignora
+# Enter on a group separator: ignore
 [[ "$win" == @* ]] || exit 0
 
 tmux switch-client -t "$session:" 2>/dev/null

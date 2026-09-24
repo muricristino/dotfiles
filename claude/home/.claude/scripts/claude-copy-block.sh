@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# prefix + y — copia um bloco de código da conversa do Claude Code do pane atual.
-# Lê do TRANSCRIPT (~/.claude/projects/<projeto>/<sessão>.jsonl), que guarda o
-# texto exato que o Claude escreveu — sem o wrap da tela. Determinístico.
+# prefix + y — copy a code block from the current pane's Claude Code conversation.
+# Reads from the TRANSCRIPT (~/.claude/projects/<project>/<session>.jsonl), which holds
+# the exact text Claude wrote — without screen wrapping. Deterministic.
 set -uo pipefail
 
 if [[ "${1:-}" != "--popup" ]]; then
@@ -11,15 +11,15 @@ fi
 
 cwd=$(tmux display-message -p '#{pane_current_path}')
 proj="$HOME/.claude/projects/${cwd//\//-}"
-# fallback: projeto com transcript mais recente
+# fallback: project with the most recent transcript
 [[ -d "$proj" ]] || proj=$(ls -td "$HOME"/.claude/projects/*/ 2>/dev/null | head -1)
-ls "$proj"/*.jsonl >/dev/null 2>&1 || { echo "nenhum transcript em $proj"; sleep 2; exit 1; }
+ls "$proj"/*.jsonl >/dev/null 2>&1 || { echo "no transcript in $proj"; sleep 2; exit 1; }
 
 dir=$(mktemp -d)
 trap 'rm -rf "$dir"' EXIT
 
-# Extrai os blocos ```...``` das mensagens do assistente de TODAS as sessões do
-# projeto (pode haver mais de um claude aberto), ordenados por hora, um por arquivo.
+# Extract ```...``` blocks from assistant messages across ALL of the project's
+# sessions (more than one claude may be open), sorted by time, one per file.
 python3 - "$proj" "$dir" <<'PY2'
 import json, re, sys, pathlib, glob
 proj, out = sys.argv[1], pathlib.Path(sys.argv[2])
@@ -37,7 +37,7 @@ for f in glob.glob(proj + "/*.jsonl"):
                 code = code.rstrip("\n")
                 if code.strip(): blocks.append((ts, lang.strip() or "-", code))
 blocks.sort(key=lambda b: b[0])
-blocks = blocks[-300:]                       # só os últimos 300
+blocks = blocks[-300:]                       # only the last 300
 idx = []
 for n, (ts, lang, code) in enumerate(blocks, 1):
     (out / f"{n}.txt").write_text(code, encoding="utf-8")
@@ -46,21 +46,21 @@ for n, (ts, lang, code) in enumerate(blocks, 1):
 (out / "index").write_text("\n".join(idx), encoding="utf-8")
 PY2
 
-[[ -s "$dir/index" ]] || { echo "nenhum bloco de código em $(basename "$proj")"; sleep 2; exit 1; }
+[[ -s "$dir/index" ]] || { echo "no code blocks in $(basename "$proj")"; sleep 2; exit 1; }
 
-# Preview com syntax highlighting (bat + gruvbox); a linguagem vem do fence.
-# {3} é a coluna de linguagem do índice; "-" cai no autodetect do bat.
+# Preview with syntax highlighting (bat + gruvbox); the language comes from the fence.
+# {3} is the index's language column; "-" falls through to bat's autodetect.
 PREVIEW='f="'"$dir"'"/{1}.txt; l=$(printf %s {3} | tr -d " "); [ "$l" = "-" ] && l=sh;
   bat --color=always --style=plain --theme=gruvbox-dark --language="$l" "$f" 2>/dev/null || cat "$f"'
 
-# Modo vim: começa em insert; esc entra no normal (j/k/g/G/d/u/q), i volta.
+# Vim mode: starts in insert; esc enters normal (j/k/g/G/d/u/q), i goes back.
 VIM_KEYS='j,k,g,G,d,u,q'
 PROMPT_INS="$(printf '\xef\x84\xa1') block ❯ "
 PROMPT_NRM="$(printf '\xef\x84\xa1') block [N] ❯ "
 
 sel=$(tac "$dir/index" | fzf --ansi --delimiter=$'\t' --with-nth=2.. --no-sort --reverse \
   --prompt="$PROMPT_INS" \
-  --header="$(basename "$proj") · recentes primeiro · Enter copia · esc: modo normal" \
+  --header="$(basename "$proj") · newest first · Enter copies · esc: normal mode" \
   --preview="$PREVIEW" --preview-window=down:60%:wrap \
   --bind "start:unbind($VIM_KEYS)" \
   --bind "esc:rebind($VIM_KEYS)+change-prompt($PROMPT_NRM)" \
@@ -72,4 +72,4 @@ n=$(cut -f1 <<<"$sel")
 ~/.config/tmux/clip.sh copy < "$dir/$n.txt"
 lines=$(wc -l < "$dir/$n.txt" | tr -d ' ')
 chars=$(wc -c < "$dir/$n.txt" | tr -d ' ')
-tmux display-message "$(printf '\xef\x83\x85') copiado do transcript · $((lines+1)) linha(s) · ${chars} chars"
+tmux display-message "$(printf '\xef\x83\x85') copied from transcript · $((lines+1)) line(s) · ${chars} chars"
