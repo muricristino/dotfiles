@@ -1,0 +1,43 @@
+theme = gruvbox-material-hard-dark
+cursor-style = block
+cursor-style-blink = true
+title = " "
+
+# Custom icon matching your theme
+macos-icon = custom
+macos-custom-icon = ~/.config/ghostty/gruvbox-dark-hard.icns
+macos-titlebar-style = hidden
+
+# Remove title text but keep the title bar
+shell-integration-features = cursor,sudo,no-title
+
+# Allow Option key to be used (not intercepted by system)
+macos-option-as-alt = true
+
+# Explicit keybindings for Option+arrow to send xterm sequences for tmux
+# Fix cedilha — overrides macos-option-as-alt for just this key
+keybind = alt+c=text:ç
+keybind = alt+shift+c=text:Ç
+
+# Shift+Enter envia ESC+CR: nova linha no zsh sem executar (o zsh sozinho não
+# distingue shift+enter de enter). Claude Code também aceita essa sequência.
+keybind = shift+enter=text:\x1b\x0d
+
+# Cmd+V manda o byte do Ctrl+V (0x16) em vez de colar pelo terminal: assim a
+# tecla chega no app, e o Claude Code lê o pasteboard sozinho (imagem inclusa).
+# O paste nativo, só-texto, fica no Cmd+Shift+V.
+keybind = super+v=text:\x16
+keybind = super+shift+v=paste_from_clipboard
+
+keybind = alt+up=text:\x1b\x5b\x31\x3b\x33\x41
+keybind = alt+down=text:\x1b\x5b\x31\x3b\x33\x42
+keybind = alt+right=text:\x1b\x5b\x31\x3b\x33\x43
+keybind = alt+left=text:\x1b\x5b\x31\x3b\x33\x44
+window-step-resize = true
+window-padding-x = 6
+window-padding-y = 6, 0
+window-padding-balance = false
+window-padding-color = background
+palette = 8=#D8A658
+palette = 4=#7daea3
+palette = 6=#89b482

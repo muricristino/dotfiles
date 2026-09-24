@@ -1,0 +1,73 @@
+{
+  "model": "opus[1m]",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.cargo/bin/codo session-start",
+            "timeout": 20
+          },
+          {
+            "type": "command",
+            "command": "~/.claude/scripts/dotfiles-sync.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.cargo/bin/codo mode-reminder",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.cargo/bin/codo statusline",
+    "padding": 0
+  },
+  "enabledPlugins": {
+    "claude-bionify@awesome-claude-code-plugins": true,
+    "humanizer@humanizer": true
+  },
+  "extraKnownMarketplaces": {
+    "awesome-claude-code-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "ccplugins/awesome-claude-code-plugins"
+      }
+    },
+    "humanizer": {
+      "source": {
+        "source": "github",
+        "repo": "blader/humanizer"
+      }
+    }
+  },
+  "language": "pt-BR",
+  "remote": {
+    "defaultEnvironmentId": "env_01Mg5YBvEnVhB1A72GG61UHe"
+  },
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "auto",
+  "remoteControlAtStartup": true,
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
+  "voiceEnabled": true,
+  "attribution": {
+    "commit": "",
+    "pr": ""
+  }
+}

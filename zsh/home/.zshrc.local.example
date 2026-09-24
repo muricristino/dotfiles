@@ -1,0 +1,5 @@
+# Secrets and machine-specific config — copy to ~/.zshrc.local (not tracked in git)
+# Sourced at the end of ~/.zshrc.
+
+# export GITHUB_TOKEN=
+# export OPENAI_API_KEY=

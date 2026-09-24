@@ -1,0 +1,17 @@
+.DS_Store
+*.local
+*.log
+ssh/home/.ssh/known_hosts
+
+# Claude Code: skills that stay on this machine only
+# work (RD) skills and anything built on top of them
+claude/home/.claude/skills/rd-*
+claude/home/.claude/skills/review-comment/
+# third-party skills, installed as symlinks into ~/.agents/skills
+claude/home/.claude/skills/clerk-*
+# managed by claude.ai skill sync
+claude/home/.claude/skills/synced/
+# browser profile with cookies and sessions
+claude/home/.claude/skills/playwright/profile/
+# tied to a private Notion workspace
+claude/home/.claude/scripts/notion-sync-icons.ts

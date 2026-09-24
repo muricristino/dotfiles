@@ -1,0 +1,4 @@
+# Identity and machine-specific git config — copy to ~/.gitconfig.local (not tracked in git)
+[user]
+	name =
+	email =
