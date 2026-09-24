@@ -1,8 +1,8 @@
 return {
   {
     "github/copilot.vim",
-    -- cmd (não InsertEnter): o copilot.vim sobe o language server ao carregar
-    -- mesmo com copilot_enabled=0 — só carrega quando :Copilot for invocado
+    -- cmd (not InsertEnter): copilot.vim starts the language server on load
+    -- even with copilot_enabled=0 — only loads when :Copilot is invoked
     cmd = "Copilot",
     config = function()
       vim.g.copilot_enabled = 0  -- off by default; toggle with <leader>uC

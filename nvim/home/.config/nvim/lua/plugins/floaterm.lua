@@ -83,13 +83,13 @@ return {
       "<leader>T",
       "<cmd>TermSelect<cr>",
       mode = "n",
-      desc = "Listar terminais",
+      desc = "List terminals",
     },
     {
       "<leader>tl",
       "<cmd>TermSelect<cr>",
       mode = "n",
-      desc = "Listar terminais",
+      desc = "List terminals",
     },
     {
       "<leader>tn",
@@ -99,7 +99,7 @@ return {
         vim.cmd(next_id .. "ToggleTerm")
       end,
       mode = "n",
-      desc = "Novo terminal",
+      desc = "New terminal",
     },
     {
       "<M-]>",
@@ -111,7 +111,7 @@ return {
         vim.cmd(terms[next_id].id .. "ToggleTerm")
       end,
       mode = { "n", "t" },
-      desc = "Próximo terminal",
+      desc = "Next terminal",
     },
     {
       "<M-[>",
@@ -123,7 +123,7 @@ return {
         vim.cmd(terms[prev_id].id .. "ToggleTerm")
       end,
       mode = { "n", "t" },
-      desc = "Terminal anterior",
+      desc = "Previous terminal",
     },
   },
 }

@@ -2,8 +2,8 @@ return {
   -- Supermaven AI autocomplete
   {
     "supermaven-inc/supermaven-nvim",
-    -- cmd (não InsertEnter): senão o sm-agent sobe em todo nvim mesmo com
-    -- inline completion desligado — só carrega quando você chamar
+    -- cmd (not InsertEnter): otherwise sm-agent starts in every nvim even with
+    -- inline completion off — only loads when you invoke it
     cmd = { "SupermavenStart", "SupermavenToggle", "SupermavenStatus" },
     opts = {
       disable_inline_completion = true,  -- off by default; :SupermavenStart to enable

@@ -1,4 +1,4 @@
--- Navegação transparente entre splits do nvim e panes do tmux com Ctrl-h/j/k/l
+-- Seamless navigation between nvim splits and tmux panes with Ctrl-h/j/k/l
 return {
   "christoomey/vim-tmux-navigator",
   cmd = {

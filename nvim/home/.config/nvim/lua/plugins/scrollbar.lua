@@ -1,5 +1,5 @@
--- Scrollbar decorado na borda: thumb (noção de tamanho do arquivo) +
--- marcadores de cursor, busca, diagnostics, git e marks. Estilo Cursor/VSCode.
+-- Decorated scrollbar on the edge: thumb (sense of file size) +
+-- markers for cursor, search, diagnostics, git and marks. Cursor/VSCode style.
 return {
   "lewis6991/satellite.nvim",
   event = "VeryLazy",

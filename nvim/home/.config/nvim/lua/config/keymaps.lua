@@ -4,8 +4,8 @@
 
 -- <leader>uC: toggle GitHub Copilot on/off
 vim.keymap.set("n", "<leader>uC", function()
-  -- pcall: com o plugin lazy (cmd = "Copilot"), a função só existe após o
-  -- primeiro :Copilot enable — que é o que o else dispara
+  -- pcall: with the plugin lazy-loaded (cmd = "Copilot"), the function only exists
+  -- after the first :Copilot enable — which is what the else branch triggers
   local ok, enabled = pcall(vim.fn["copilot#Enabled"])
   if ok and enabled == 1 then
     vim.cmd("Copilot disable")
@@ -82,7 +82,7 @@ vim.keymap.set("n", "<leader>E", function()
   end
 end, { desc = "Close Explorer" })
 
--- Cmd+V chega como <C-v> (keybind do Ghostty). Só em insert/cmdline: em normal
--- e visual o <C-v> continua sendo o visual-block.
+-- Cmd+V arrives as <C-v> (Ghostty keybind). Insert/cmdline only: in normal
+-- and visual mode <C-v> is still visual-block.
 vim.keymap.set("i", "<C-v>", "<C-r><C-o>+", { desc = "Paste clipboard" })
 vim.keymap.set("c", "<C-v>", "<C-r><C-o>+", { desc = "Paste clipboard" })
