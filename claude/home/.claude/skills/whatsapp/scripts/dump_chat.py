@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-"""Exporta uma conversa do WhatsApp para TSV.
+"""Exports a WhatsApp conversation to TSV.
 
-  dump_chat.py <chat_pk> [data_inicial YYYY-MM-DD] > chat.tsv
+  dump_chat.py <chat_pk> [start_date YYYY-MM-DD] > chat.tsv
 
-Colunas: pk, data, autor, tipo, duracao, caminho_midia, texto
-Sem argumentos, lista as conversas disponíveis.
+Columns: pk, date, author, type, duration, media_path, text
+With no arguments, lists the available conversations.
 """
 import os, sys, shutil, sqlite3, tempfile
 
 BASE = os.path.expanduser(
     "~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared")
 EPOCH = 978307200
-TIPOS = {0: "texto", 1: "imagem", 2: "video", 3: "audio", 8: "doc"}
+TYPES = {0: "text", 1: "image", 2: "video", 3: "audio", 8: "doc"}
 
 
-def abrir():
-    """Copia o banco (evita lock/WAL do app) e devolve a conexão."""
+def open_db():
+    """Copies the database (avoids the app's lock/WAL) and returns the connection."""
     tmp = os.path.join(tempfile.gettempdir(), "wpp-ChatStorage.sqlite")
     src = os.path.join(BASE, "ChatStorage.sqlite")
     if not os.path.exists(src):
-        sys.exit(f"banco não encontrado em {src}")
+        sys.exit(f"database not found at {src}")
     shutil.copy(src, tmp)
     for ext in ("-wal", "-shm"):
         if os.path.exists(src + ext):
@@ -27,19 +27,19 @@ def abrir():
     return sqlite3.connect(tmp)
 
 
-def listar(con):
-    print("PK\tMENSAGENS\tNOME", file=sys.stderr)
+def list_chats(con):
+    print("PK\tMESSAGES\tNAME", file=sys.stderr)
     q = """select s.Z_PK, count(m.Z_PK), s.ZPARTNERNAME
            from ZWACHATSESSION s left join ZWAMESSAGE m on m.ZCHATSESSION = s.Z_PK
            group by 1 order by 2 desc limit 40"""
-    for pk, n, nome in con.execute(q):
-        print(f"{pk}\t{n}\t{nome}", file=sys.stderr)
+    for pk, n, name in con.execute(q):
+        print(f"{pk}\t{n}\t{name}", file=sys.stderr)
 
 
-def dump(con, pk, desde=None):
+def dump(con, pk, since=None):
     cond = ""
-    if desde:
-        cond = f"and m.ZMESSAGEDATE > (CAST(strftime('%s','{desde}') AS INTEGER) - {EPOCH})"
+    if since:
+        cond = f"and m.ZMESSAGEDATE > (CAST(strftime('%s','{since}') AS INTEGER) - {EPOCH})"
     q = f"""
       select m.Z_PK,
              datetime(m.ZMESSAGEDATE+{EPOCH},'unixepoch','localtime'),
@@ -53,17 +53,17 @@ def dump(con, pk, desde=None):
       order by m.ZMESSAGEDATE"""
     n = 0
     for row in con.execute(q, (pk,)):
-        mpk, dt, mine, tipo, dur, path, txt = row
-        autor = "EU" if mine == 1 else "ELE"
+        mpk, dt, mine, kind, dur, path, txt = row
+        author = "ME" if mine == 1 else "THEM"
         txt = txt.replace("\t", " ").replace("\n", " ¶ ")
-        print(f"{mpk}\t{dt}\t{autor}\t{TIPOS.get(tipo, f'tipo{tipo}')}\t{dur}\t{path}\t{txt}")
+        print(f"{mpk}\t{dt}\t{author}\t{TYPES.get(kind, f'type{kind}')}\t{dur}\t{path}\t{txt}")
         n += 1
-    print(f"{n} mensagens exportadas", file=sys.stderr)
+    print(f"{n} messages exported", file=sys.stderr)
 
 
 if __name__ == "__main__":
-    con = abrir()
+    con = open_db()
     if len(sys.argv) < 2:
-        listar(con)
-        sys.exit("\nuso: dump_chat.py <chat_pk> [YYYY-MM-DD]")
+        list_chats(con)
+        sys.exit("\nusage: dump_chat.py <chat_pk> [YYYY-MM-DD]")
     dump(con, int(sys.argv[1]), sys.argv[2] if len(sys.argv) > 2 else None)

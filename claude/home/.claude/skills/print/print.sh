@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# print.sh — print da tela, opcionalmente de uma window específica do tmux
+# print.sh — screenshot of the screen, optionally of a specific tmux window
 #
-#   print.sh                  → print da tela como está
-#   print.sh --list           → lista as windows do tmux
-#   print.sh belchior         → troca pra window com esse nome e printa
-#   print.sh axolutions:6     → troca pra sessão:window e printa
-#   print.sh --text belchior  → dump em texto do conteúdo da window (sem imagem)
+#   print.sh                  → screenshot of the screen as it is
+#   print.sh --list           → list the tmux windows
+#   print.sh belchior         → switch to the window with that name and capture
+#   print.sh axolutions:6     → switch to session:window and capture
+#   print.sh --text belchior  → text dump of the window's content (no image)
 #
-# Depois de printar, volta pra window/sessão que estava antes.
+# After capturing, switches back to the window/session it was on before.
 
 set -euo pipefail
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
@@ -20,19 +20,19 @@ TARGET=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --list|-l)
-      tmux list-windows -a -F '#{session_name}:#{window_index}  #{window_name}#{?window_active, (ativa),}  [#{window_panes} panes]'
+      tmux list-windows -a -F '#{session_name}:#{window_index}  #{window_name}#{?window_active, (active),}  [#{window_panes} panes]'
       exit 0 ;;
     --text|-t) MODE=text; shift ;;
     *) TARGET="$1"; shift ;;
   esac
 done
 
-resolve() { # nome | sessão:idx | sessão:nome → sessão:idx
+resolve() { # name | session:idx | session:name → session:idx
   local q="$1"
   if [[ "$q" == *:* ]] && tmux list-windows -a -F '#{session_name}:#{window_index}' | grep -qx "$q"; then
     echo "$q"; return
   fi
-  # sessão:nome — desambigua um nome repetido em várias sessões
+  # session:name — disambiguates a name repeated across sessions
   if [[ "$q" == *:* ]]; then
     tmux list-windows -a -F '#{session_name}:#{window_index} #{session_name} #{window_name}' \
       | awk -v s="${q%%:*}" -v n="${q#*:}" '$2 == s && $3 == n {print $1; exit}'
@@ -45,7 +45,7 @@ resolve() { # nome | sessão:idx | sessão:nome → sessão:idx
 if [[ -n "$TARGET" ]]; then
   WIN="$(resolve "$TARGET")"
   if [[ -z "$WIN" ]]; then
-    echo "window '$TARGET' não encontrada. Disponíveis:" >&2
+    echo "window '$TARGET' not found. Available:" >&2
     tmux list-windows -a -F '  #{session_name}:#{window_index}  #{window_name}' >&2
     exit 1
   fi
@@ -56,7 +56,7 @@ if [[ "$MODE" == text ]]; then
   exit 0
 fi
 
-# --- imagem ---
+# --- image ---
 PREV_SESSION="" PREV_WINDOW=""
 if [[ -n "${WIN:-}" ]]; then
   PREV_SESSION="$(tmux display-message -p '#{session_name}')"

@@ -1,37 +1,37 @@
 ---
 name: tmux
-description: Inspeciona e dirige panes do tmux — listar windows/panes, ler o que está na tela de um pane, descobrir e repetir o último comando rodado ali, mandar comandos ou teclas. Use quando o usuário falar de "pane", "window", "aba do tmux", "roda de novo lá no pane X", "o que tá rodando no Y", "manda C-c no pane Z".
+description: Inspects and drives tmux panes — list windows/panes, read what's on a pane's screen, find and repeat the last command run there, send commands or keys. Use when the user talks about a "pane", "window", "tmux tab", "run it again in pane X", "what's running in Y", "send C-c to pane Z".
 allowed-tools: Bash
 ---
 
 # tmux
 
-Script: `~/.claude/skills/tmux/tmux.sh`. Alvo é sempre `sessão:window.pane` (ex.: `rd:1.2`).
+Script: `~/.claude/skills/tmux/tmux.sh`. The target is always `session:window.pane` (e.g. `rd:1.2`).
 
 ```bash
 T=~/.claude/skills/tmux/tmux.sh
 
-$T ls                       # todas as windows de todas as sessões
-$T panes rd:1               # panes da window, com comando rodando e cwd
-$T cat rd:1.2 80            # últimas 80 linhas do pane
-$T hist rd:1.2 hoop         # comandos já rodados no pane que casam com "hoop"
-$T last rd:1.2 hoop         # o último deles
-$T run rd:1.2 'hoop login'  # manda o comando + Enter e mostra o resultado
-$T rerun rd:1.2 hoop        # repete o último comando que casa com "hoop"
-$T keys rd:1.2 C-c          # teclas cruas: C-c, Escape, q, Up...
+$T ls                       # all windows of all sessions
+$T panes rd:1               # the window's panes, with running command and cwd
+$T cat rd:1.2 80            # last 80 lines of the pane
+$T hist rd:1.2 hoop         # commands already run in the pane matching "hoop"
+$T last rd:1.2 hoop         # the last of them
+$T run rd:1.2 'hoop login'  # send the command + Enter and show the result
+$T rerun rd:1.2 hoop        # repeat the last command matching "hoop"
+$T keys rd:1.2 C-c          # raw keys: C-c, Escape, q, Up...
 ```
 
-## Como resolver o alvo
+## Resolving the target
 
-Se o usuário disser só o nome ("pane 2 do api"), rode `$T ls` pra achar
-`sessão:window` e monte `sessão:window.pane`. Nome repetido em sessões diferentes
-(ex.: `api` em work:1, work:7, work:8) → confirme pelo `$T panes`.
+If the user only gives a name ("pane 2 of api"), run `$T ls` to find
+`session:window` and build `session:window.pane`. Same name in different sessions
+(e.g. `api` in work:1, work:7, work:8) → confirm with `$T panes`.
 
-## Notas
+## Notes
 
-- `run` espera 4s por padrão antes de capturar; passe um 3º argumento pra esperar mais
-  (`$T run rd:1.2 'comando pesado' 15`).
-- `hist`/`last` leem o scrollback (5000 linhas) procurando linhas de prompt `❯ $ #`.
-  Se o pane foi limpo, caia pro `~/.zsh_history`.
-- Comando interativo (login que abre browser, TUI) fica pendurado no pane —
-  capture de novo depois em vez de esperar no shell.
+- `run` waits 4s by default before capturing; pass a 3rd argument to wait longer
+  (`$T run rd:1.2 'heavy command' 15`).
+- `hist`/`last` read the scrollback (5000 lines) looking for prompt lines `❯ $ #`.
+  If the pane was cleared, fall back to `~/.zsh_history`.
+- An interactive command (login that opens a browser, TUI) hangs in the pane —
+  capture again later instead of waiting in the shell.

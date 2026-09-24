@@ -1,38 +1,38 @@
 ---
 name: print
-description: Tira um print (screenshot) da tela do Mac e entrega a imagem, opcionalmente de uma window específica do tmux. Use quando o usuário pedir "print", "print da tela", "screenshot", "manda um print", "print da window X", "print da aba X". Só captura e entrega — sem descrever nem comentar o conteúdo.
+description: Takes a screenshot of the Mac screen and delivers the image, optionally of a specific tmux window. Use when the user asks for a "print", "screenshot", "screen grab", "send me a screenshot", "screenshot of window X", "screenshot of tab X". Only captures and delivers — no describing or commenting on the content.
 allowed-tools: Bash, Read
 ---
 
-# Print da tela
+# Screenshot
 
-Capture a tela e entregue a imagem. **Nada além disso.**
+Capture the screen and deliver the image. **Nothing else.**
 
-## Uso
+## Usage
 
-O script fica em `~/.claude/skills/print/print.sh` e imprime o caminho do PNG.
+The script lives at `~/.claude/skills/print/print.sh` and prints the PNG path.
 
 ```bash
-~/.claude/skills/print/print.sh                 # tela como está
-~/.claude/skills/print/print.sh --list          # lista as windows do tmux
-~/.claude/skills/print/print.sh belchior        # troca pra essa window, printa, e volta
-~/.claude/skills/print/print.sh axolutions:6    # sessão:índice (desambigua nomes repetidos)
-~/.claude/skills/print/print.sh --text belchior # dump em texto do pane (sem imagem)
+~/.claude/skills/print/print.sh                 # screen as it is
+~/.claude/skills/print/print.sh --list          # list the tmux windows
+~/.claude/skills/print/print.sh belchior        # switch to that window, capture, and switch back
+~/.claude/skills/print/print.sh axolutions:6    # session:index (disambiguates repeated names)
+~/.claude/skills/print/print.sh --text belchior # text dump of the pane (no image)
 ```
 
-Depois leia o PNG retornado com a tool Read para exibir a imagem.
+Then read the returned PNG with the Read tool to display the image.
 
-## Escolhendo a window
+## Picking the window
 
-- Sem argumento → printa o que está na tela agora.
-- Com argumento → o script faz `select-window` (e `switch-client` se for outra sessão),
-  ativa o terminal, captura e **volta pra window/sessão anterior**.
-- Se o nome existir em mais de uma sessão, use `sessão:índice`.
-- Se o usuário pedir um nome que não existe, rode `--list` e mostre as opções.
+- No argument → captures what's on screen right now.
+- With an argument → the script runs `select-window` (and `switch-client` if it's another session),
+  activates the terminal, captures, and **switches back to the previous window/session**.
+- If the name exists in more than one session, use `session:index`.
+- If the user asks for a name that doesn't exist, run `--list` and show the options.
 
-## Regras
+## Rules
 
-- Não descreva o que aparece na tela.
-- Não liste janelas, apps, abas ou horários.
-- Não comente, não resuma, não pergunte nada.
-- Nenhum texto de acompanhamento. Só a imagem.
+- Don't describe what's on screen.
+- Don't list windows, apps, tabs or times.
+- Don't comment, summarize, or ask anything.
+- No accompanying text. Just the image.

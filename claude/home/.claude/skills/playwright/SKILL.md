@@ -1,55 +1,55 @@
 ---
 name: playwright
-description: Dirige um navegador real neste Mac com Playwright — abrir páginas, logar, clicar, extrair conteúdo e tirar screenshots de telas de verdade. Use quando o usuário pedir para validar/testar algo no navegador, "prova que funciona", print de uma tela logada, raspar conteúdo de um site, ou automatizar um fluxo web. Inclui sessão persistente para sites que exigem login (WhatsApp Web, painéis internos).
+description: Drives a real browser on this Mac with Playwright — open pages, log in, click, extract content and take screenshots of real screens. Use when the user asks to validate/test something in the browser, "prove it works", a screenshot of a logged-in screen, scrape content from a site, or automate a web flow. Includes a persistent session for sites that require login (WhatsApp Web, internal dashboards).
 allowed-tools: Bash, Read, Write, Edit
 ---
 
-# Playwright neste Mac
+# Playwright on this Mac
 
-Automação de navegador real. O valor está em **provar que algo funciona** com
-evidência visual, não em descrever.
+Real browser automation. The value is in **proving something works** with
+visual evidence, not describing it.
 
-## Onde o Playwright mora
+## Where Playwright lives
 
-Não há instalação global. Ele vem do `node_modules` de algum projeto:
+There's no global install. It comes from some project's `node_modules`:
 
 ```bash
 ls ~/code/*/node_modules/playwright ~/code/*/*/node_modules/playwright 2>/dev/null | head
-ls ~/Library/Caches/ms-playwright     # chromium já baixado
+ls ~/Library/Caches/ms-playwright     # chromium already downloaded
 ```
 
-Se o projeto não tiver, procure outro que tenha ou instale com
+If the project doesn't have it, find another one that does or install with
 `npx playwright@latest install chromium`.
 
-## As duas armadilhas que sempre pegam
+## The two traps that always bite
 
-**1. Import por caminho absoluto.** Script fora do projeto não resolve o pacote
-pelo nome. Sempre:
+**1. Import by absolute path.** A script outside the project can't resolve the
+package by name. Always:
 
 ```js
-import { chromium } from "/caminho/do/projeto/node_modules/playwright/index.mjs"
+import { chromium } from "/path/to/project/node_modules/playwright/index.mjs"
 ```
 
-**2. PATH do node.** O node vem do asdf. Antes de rodar:
+**2. node's PATH.** node comes from asdf. Before running:
 
 ```bash
 export PATH="$HOME/.asdf/shims:$PATH"
 node script.mjs
 ```
 
-Sem isso: `command not found: node` ou versão errada.
+Without it: `command not found: node` or the wrong version.
 
-## Esqueleto
+## Skeleton
 
 ```js
-import { chromium } from "/caminho/node_modules/playwright/index.mjs"
+import { chromium } from "/path/node_modules/playwright/index.mjs"
 
 const browser = await chromium.launch()                    // headless
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
 
 await page.goto("http://localhost:3000/login", { waitUntil: "networkidle" })
-await page.fill("#email", "user@exemplo.com")
-await page.fill("#password", "senha")
+await page.fill("#email", "user@example.com")
+await page.fill("#password", "password")
 await page.click('button[type="submit"]')
 await page.waitForURL((u) => !u.pathname.includes("/login"), { timeout: 60000 })
 
@@ -57,13 +57,13 @@ await page.screenshot({ path: "/tmp/shot.png" })
 await browser.close()
 ```
 
-## Sessão persistente (sites com login)
+## Persistent session (sites with login)
 
-Para não escanear QR / logar toda vez, use perfil em disco. **Precisa ser
-headed** quando exige interação humana:
+To avoid scanning a QR / logging in every time, use an on-disk profile. **It must
+be headed** when it needs human interaction:
 
 ```js
-const ctx = await chromium.launchPersistentContext("/caminho/perfil", {
+const ctx = await chromium.launchPersistentContext("/path/profile", {
   headless: false,
   viewport: null,
   args: ["--window-size=1500,1000"],
@@ -71,69 +71,69 @@ const ctx = await chromium.launchPersistentContext("/caminho/perfil", {
 const page = ctx.pages()[0] || (await ctx.newPage())
 ```
 
-Para esperar o usuário logar, faça polling pelo elemento que só existe depois do
-login, e mantenha a janela aberta com `await new Promise(() => {})` se for
-continuar em outro script. O perfil sobrevive entre execuções — o segundo script
-pode relançar o mesmo `launchPersistentContext` sem pedir login de novo.
+To wait for the user to log in, poll for the element that only exists after
+login, and keep the window open with `await new Promise(() => {})` if you'll
+continue in another script. The profile survives between runs — the second script
+can relaunch the same `launchPersistentContext` without asking for login again.
 
-## Print de elemento, não da página inteira
+## Screenshot an element, not the whole page
 
-Muito mais legível para mostrar a alguém:
+Much more readable when showing someone:
 
 ```js
-const card = page.locator("text=Faturas por Mês")
+const card = page.locator("text=Invoices by Month")
   .locator("xpath=ancestor::div[contains(@class,'rounded-lg')][1]")
 await card.scrollIntoViewIfNeeded()
 await card.screenshot({ path: "shot.png" })
 ```
 
-Página inteira: `page.screenshot({ path, fullPage: true })`.
+Whole page: `page.screenshot({ path, fullPage: true })`.
 
-## Extrair dado, não só imagem
+## Extract data, not just images
 
-O log do script vale tanto quanto o print — ele vira a prova textual:
+The script log is worth as much as the screenshot — it becomes the textual proof:
 
 ```js
-const linhas = page.locator('article[aria-label^="Fatura de"]')
-console.log("encontrados:", await linhas.count())
-for (let i = 0; i < await linhas.count(); i++)
-  console.log(" ", (await linhas.nth(i).innerText()).replace(/\n+/g, " · "))
+const rows = page.locator('article[aria-label^="Invoice for"]')
+console.log("found:", await rows.count())
+for (let i = 0; i < await rows.count(); i++)
+  console.log(" ", (await rows.nth(i).innerText()).replace(/\n+/g, " · "))
 ```
 
-Para asserção negativa (provar que um erro sumiu):
+For a negative assertion (proving an error is gone):
 
 ```js
-const erro = await page.getByText(/Selecione o cliente/i).count()
-console.log(erro === 0 ? "erro NÃO aparece ✓" : "AINDA APARECE ✗")
+const err = await page.getByText(/Select a client/i).count()
+console.log(err === 0 ? "error does NOT appear ✓" : "STILL APPEARS ✗")
 ```
 
 ## Strict mode
 
-`locator(...)` que casa com mais de um elemento **lança exceção**. Use `.first()`
-ou refine o seletor. Isso quebra scripts no meio — depois de expandir uma
-listagem, o número de elementos casados muda.
+A `locator(...)` that matches more than one element **throws**. Use `.first()`
+or refine the selector. This breaks scripts midway — after expanding a
+list, the number of matched elements changes.
 
-## Rodando contra produção
+## Running against production
 
-- **Só leitura.** Nunca confirme diálogos que gravam. Abra, printe, **Cancele**.
-- Diga isso no log: `console.log("OK — nenhum dado alterado")`.
-- Antes de qualquer coisa destrutiva em produção, pergunte.
+- **Read-only.** Never confirm dialogs that write. Open, screenshot, **Cancel**.
+- Say so in the log: `console.log("OK — no data changed")`.
+- Before anything destructive in production, ask.
 
-## Como entregar
+## How to deliver
 
-1. Rode o script e leia o log
-2. **Leia o PNG com a tool Read** antes de mandar — confirme que mostra o que
-   você vai afirmar que mostra
-3. Entregue com SendUserFile, `display: "render"`
+1. Run the script and read the log
+2. **Read the PNG with the Read tool** before sending — confirm it shows what
+   you're going to claim it shows
+3. Deliver with SendUserFile, `display: "render"`
 
-Nunca afirme que algo funciona sem ter olhado a imagem.
+Never claim something works without having looked at the image.
 
-## Depuração
+## Debugging
 
-| Sintoma | Causa |
+| Symptom | Cause |
 |---|---|
-| `Cannot find package 'playwright'` | import por nome em vez de caminho absoluto |
-| `command not found: node` | faltou o PATH do asdf |
-| timeout no seletor | a tela mudou; tire um `fullPage` e olhe |
-| strict mode violation | falta `.first()` |
-| página em branco | faltou `waitUntil: "networkidle"` ou um `waitForTimeout` |
+| `Cannot find package 'playwright'` | import by name instead of absolute path |
+| `command not found: node` | missing the asdf PATH |
+| selector timeout | the screen changed; take a `fullPage` and look |
+| strict mode violation | missing `.first()` |
+| blank page | missing `waitUntil: "networkidle"` or a `waitForTimeout` |

@@ -1,26 +1,26 @@
 ---
 name: whatsapp
-description: Lê o histórico do WhatsApp deste Mac direto do banco local do app — mensagens, datas, autores — e transcreve os áudios e vídeos com whisper. Use quando o usuário pedir para achar/reler/resgatar conversas, "o que o fulano falou sobre X", transcrever áudios do WhatsApp, ou montar linha do tempo de um cliente a partir do chat. Muito mais confiável que raspar o WhatsApp Web.
+description: Reads this Mac's WhatsApp history straight from the app's local database — messages, dates, authors — and transcribes voice notes and videos with whisper. Use when the user asks to find/reread/dig up conversations, "what did so-and-so say about X", transcribe WhatsApp audios, or build a client timeline from the chat. Far more reliable than scraping WhatsApp Web.
 allowed-tools: Bash, Read, Write
 ---
 
-# WhatsApp deste Mac
+# WhatsApp on this Mac
 
-**Não rasp o WhatsApp Web.** O app nativo guarda tudo em SQLite no disco, com as
-mídias em arquivo. É mais rápido, completo e não depende de QR nem de scroll.
+**Don't scrape WhatsApp Web.** The native app keeps everything in SQLite on disk,
+with media as files. It's faster, complete, and doesn't depend on QR codes or scrolling.
 
-> Dado pessoal do usuário. Trabalhe só na conversa pedida, não faça varredura
-> geral, e não mande o conteúdo para fora sem pedido explícito.
+> The user's personal data. Work only on the requested conversation, don't do a
+> general sweep, and don't send the content anywhere without an explicit request.
 
-## Onde tudo mora
+## Where everything lives
 
 ```
 ~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared/
-├── ChatStorage.sqlite          banco de mensagens
-└── Message/Media/…             mídias (.opus áudio, .mp4 vídeo, .jpg imagem)
+├── ChatStorage.sqlite          message database
+└── Message/Media/…             media (.opus audio, .mp4 video, .jpg image)
 ```
 
-**Copie o banco antes de consultar** (o app mantém lock e WAL):
+**Copy the database before querying** (the app holds a lock and WAL):
 
 ```bash
 SP=/tmp/wpp; mkdir -p $SP
@@ -30,104 +30,104 @@ cp "$BASE/ChatStorage.sqlite"* $SP/
 
 ## Schema
 
-| Tabela | Campos que importam |
+| Table | Fields that matter |
 |---|---|
-| `ZWACHATSESSION` | `Z_PK`, `ZPARTNERNAME` (nome), `ZCONTACTJID` |
+| `ZWACHATSESSION` | `Z_PK`, `ZPARTNERNAME` (name), `ZCONTACTJID` |
 | `ZWAMESSAGE` | `ZCHATSESSION`, `ZTEXT`, `ZMESSAGEDATE`, `ZISFROMME`, `ZMESSAGETYPE` |
 | `ZWAMEDIAITEM` | `ZMESSAGE` (FK), `ZMEDIALOCALPATH`, `ZMOVIEDURATION` |
 
-`ZMESSAGETYPE`: **0** texto · **1** imagem · **2** vídeo · **3** áudio · **8** documento
+`ZMESSAGETYPE`: **0** text · **1** image · **2** video · **3** audio · **8** document
 
-**Datas são epoch Apple** (desde 2001-01-01). Converta com `+978307200`:
+**Dates are Apple epoch** (since 2001-01-01). Convert with `+978307200`:
 
 ```sql
 datetime(ZMESSAGEDATE + 978307200, 'unixepoch', 'localtime')
 ```
 
-Para **filtrar** por data, converta no outro sentido e faça CAST:
+To **filter** by date, convert the other way and CAST:
 
 ```sql
 WHERE ZMESSAGEDATE > (CAST(strftime('%s','2026-07-01') AS INTEGER) - 978307200)
 ```
 
-## Achar a conversa
+## Find the conversation
 
 ```bash
 sqlite3 -header -column $SP/ChatStorage.sqlite \
   "select Z_PK, ZPARTNERNAME, ZCONTACTJID from ZWACHATSESSION
-   where lower(ZPARTNERNAME) like '%fulano%';"
+   where lower(ZPARTNERNAME) like '%someone%';"
 ```
 
-Panorama antes de mergulhar — período e composição:
+Overview before diving in — period and composition:
 
 ```bash
 sqlite3 -header -column $SP/ChatStorage.sqlite "
-select date(ZMESSAGEDATE+978307200,'unixepoch','localtime') dia,
+select date(ZMESSAGEDATE+978307200,'unixepoch','localtime') day,
        sum(ZMESSAGETYPE=0) txt, sum(ZMESSAGETYPE=3) audio,
        sum(ZMESSAGETYPE=2) video, sum(ZMESSAGETYPE=1) img
 from ZWAMESSAGE where ZCHATSESSION=<PK> group by 1 order by 1;"
 ```
 
-## Exportar
+## Export
 
-Use os scripts prontos:
+Use the ready-made scripts:
 
 ```bash
-~/.claude/skills/whatsapp/scripts/dump_chat.py <chat_pk> [data_inicial] > /tmp/wpp/chat.tsv
-~/.claude/skills/whatsapp/scripts/transcrever.py /tmp/wpp/chat.tsv /tmp/wpp/transcricoes
+~/.claude/skills/whatsapp/scripts/dump_chat.py <chat_pk> [start_date] > /tmp/wpp/chat.tsv
+~/.claude/skills/whatsapp/scripts/transcribe.py /tmp/wpp/chat.tsv /tmp/wpp/transcripts
 ```
 
-`dump_chat.py` gera TSV com `pk, data, autor, tipo, duração, caminho, texto`.
-`transcrever.py` converte com ffmpeg e transcreve com whisper.
+`dump_chat.py` produces a TSV with `pk, date, author, type, duration, path, text`.
+`transcribe.py` converts with ffmpeg and transcribes with whisper.
 
-## Transcrição — o detalhe que muda tudo
+## Transcription — the detail that changes everything
 
-**Nunca chame o CLI `whisper` num loop.** Ele recarrega o modelo a cada arquivo
-(~10s cada). Carregue o modelo **uma vez** em Python e itere:
+**Never call the `whisper` CLI in a loop.** It reloads the model for every file
+(~10s each). Load the model **once** in Python and iterate:
 
 ```python
 import whisper
-model = whisper.load_model("small")      # uma vez
-for arquivo in lista:
+model = whisper.load_model("small")      # once
+for file in files:
     r = model.transcribe(wav, language="pt", fp16=False)
 ```
 
-O Python do whisper fica no libexec do Homebrew:
+whisper's Python lives in Homebrew's libexec:
 
 ```bash
 /opt/homebrew/Cellar/openai-whisper/*/libexec/bin/python
 ```
 
-**Rode a partir de um diretório neutro** (`cd /tmp`). Em projeto com `coverage`
-configurado dá `AttributeError: module 'coverage' has no attribute 'types'`.
+**Run from a neutral directory** (`cd /tmp`). In a project with `coverage`
+configured you get `AttributeError: module 'coverage' has no attribute 'types'`.
 
-Modelo `small` dá boa qualidade em português. Áudio de WhatsApp é `.opus` —
-converta antes:
+The `small` model gives good quality in Portuguese. WhatsApp audio is `.opus` —
+convert it first:
 
 ```bash
-ffmpeg -y -loglevel error -i entrada.opus -ar 16000 -ac 1 saida.wav
+ffmpeg -y -loglevel error -i input.opus -ar 16000 -ac 1 output.wav
 ```
 
-Ordem de grandeza: ~47 min de áudio → ~30 min de transcrição com `small`.
-Rode em background e avise o progresso.
+Ballpark: ~47 min of audio → ~30 min of transcription with `small`.
+Run it in the background and report progress.
 
-## Imagens
+## Images
 
-Copie para um diretório de trabalho e **leia com a tool Read** — prints de tela
-costumam ser a informação mais densa da conversa (mockups, telas de erro,
-comprovantes). Nomeie por data e autor, e **inclua o pk no nome**: várias
-imagens compartilham o mesmo segundo e sobrescrevem umas às outras.
+Copy them to a working directory and **read them with the Read tool** — screenshots
+tend to be the densest information in the conversation (mockups, error screens,
+receipts). Name them by date and author, and **include the pk in the name**: several
+images share the same second and overwrite each other.
 
-## Armadilhas do shell (custam tempo)
+## Shell traps (they cost time)
 
-- `sqlite3 -separator '\t'` grava a **barra invertida literal**, não tab.
+- `sqlite3 -separator '\t'` writes a **literal backslash**, not a tab.
   Use `-separator "$(printf '\t')"`.
-- Em zsh, `while read` dentro de pipe **perde o PATH** — `tr`, `head`, `wc`
-  somem. Para qualquer iteração sobre a lista de mídias, **use Python**.
-- Comandos com caminho absoluto (`/usr/bin/tail`) evitam surpresa de PATH.
+- In zsh, `while read` inside a pipe **loses PATH** — `tr`, `head`, `wc`
+  disappear. For any iteration over the media list, **use Python**.
+- Commands with absolute paths (`/usr/bin/tail`) avoid PATH surprises.
 
-## Como entregar
+## How to deliver
 
-Não despeje transcrição crua. Varra por palavra-chave, monte a linha do tempo em
-ordem, e cite **literal** o que importa — a frase exata do cliente vale mais que
-o resumo. Marque o que é áudio, com duração e data, para dar rastreabilidade.
+Don't dump raw transcripts. Sweep by keyword, build the timeline in
+order, and quote **verbatim** what matters — the client's exact words are worth more than
+a summary. Mark what's audio, with duration and date, for traceability.
