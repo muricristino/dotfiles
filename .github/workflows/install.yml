@@ -1,0 +1,77 @@
+name: install
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macos-brew,  os: macos-latest }
+          - { name: ubuntu-brew, os: ubuntu-latest }
+          - { name: ubuntu-apt,  os: ubuntu-latest, no_brew: true }
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: code/dotfiles
+
+      - name: Put the repo where the README says (~/code/dotfiles)
+        run: mkdir -p ~/code && mv code/dotfiles ~/code/dotfiles
+
+      - name: Remove Homebrew (test the distro package fallback)
+        if: matrix.no_brew
+        run: sudo rm -rf /home/linuxbrew
+
+      - name: Install
+        run: ~/code/dotfiles/install.sh --claude
+
+      - name: Install again (must be idempotent)
+        run: ~/code/dotfiles/install.sh --claude
+
+      - name: Links point into the repo
+        run: |
+          for f in .zshrc .gitconfig .tmux.conf .config/tmux .config/nvim .config/ghostty/config \
+                   .claude/skills .claude/scripts .claude/CLAUDE.md; do
+            case "$(readlink -f ~/"$f")" in
+              "$HOME"/code/dotfiles/*) echo "ok  $f" ;;
+              *) echo "FAIL $f -> $(readlink -f ~/"$f")"; exit 1 ;;
+            esac
+          done
+          [ "$(readlink ~/.claude/settings.json)" = "$HOME/code/dotfiles/claude/settings/base.json" ]
+
+      - name: zsh loads without errors
+        run: |
+          out=$(zsh -i -c 'echo loaded' 2>&1 | grep -v "can't change option: zle")
+          echo "$out"
+          [ "$(echo "$out" | tail -1)" = "loaded" ]
+          ! echo "$out" | grep -qiE 'not found|no such file|error'
+
+      - name: tmux config loads
+        run: |
+          tmux -f ~/.tmux.conf new-session -d -s ci
+          tmux show-options -g prefix
+          tmux kill-server
+
+      - name: Clipboard helper
+        if: runner.os == 'macOS'
+        run: echo ci-clip | ~/.config/tmux/clip.sh copy && [ "$(~/.config/tmux/clip.sh paste)" = ci-clip ]
+
+      # distro neovim is usually older than what LazyVim requires
+      - name: Neovim config loads
+        if: ${{ !matrix.no_brew }}
+        run: |
+          [ -z "$HOMEBREW_PREFIX" ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv 2>/dev/null || true)"
+          nvim --headless "+Lazy! sync" +qa
+          out=$(nvim --headless +qa 2>&1)
+          echo "$out"
+          ! echo "$out" | grep -qiE 'error'
