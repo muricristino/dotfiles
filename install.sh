@@ -4,14 +4,14 @@ set -e
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# --claude: também instala a config do Claude Code (settings base)
-# --personal: config do Claude Code do dono do repo (hooks do codo + sync automático)
+# --claude: also installs the Claude Code config (base settings)
+# --personal: the repo owner's Claude Code config (codo hooks + auto sync)
 CLAUDE=""
 for arg in "$@"; do
   case "$arg" in
     --claude)   CLAUDE=base ;;
     --personal) CLAUDE=personal ;;
-    *) echo "uso: $0 [--claude | --personal]"; exit 2 ;;
+    *) echo "usage: $0 [--claude | --personal]"; exit 2 ;;
   esac
 done
 
@@ -27,11 +27,11 @@ fi
 if command -v brew &>/dev/null; then
   brew bundle --file="$DOTFILES/Brewfile"
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-  echo "Instale o Homebrew primeiro: https://brew.sh"
+  echo "Install Homebrew first: https://brew.sh"
   exit 1
 else
-  # Sem Homebrew: pacotes da distro, um por vez (nomes e disponibilidade variam).
-  # O neovim da distro pode ser antigo demais pro LazyVim; o Homebrew evita isso.
+  # No Homebrew: distro packages, one at a time (names and availability vary).
+  # The distro's neovim may be too old for LazyVim; Homebrew avoids that.
   pkgs=(stow git zsh tmux neovim fzf jq ripgrep curl eza git-delta git-lfs gh)
   if command -v apt-get &>/dev/null; then
     sudo apt-get update -qq
@@ -41,18 +41,18 @@ else
     install_pkg() { sudo dnf install -y -q "$1" >/dev/null; }
     pkgs+=(fd-find)
   else
-    echo "Instale manualmente: ${pkgs[*]}"
+    echo "Install manually: ${pkgs[*]}"
     exit 1
   fi
   for pkg in "${pkgs[@]}"; do
-    install_pkg "$pkg" || echo "  aviso: $pkg não instalado"
+    install_pkg "$pkg" || echo "  warning: $pkg not installed"
   done
-  command -v stow &>/dev/null || { echo "stow é obrigatório"; exit 1; }
+  command -v stow &>/dev/null || { echo "stow is required"; exit 1; }
 fi
 
 # Oh My Zsh + custom plugins
 if [ ! -d "$HOME/.oh-my-zsh" ]; then
-  echo "Instalando Oh My Zsh..."
+  echo "Installing Oh My Zsh..."
   RUNZSH=no KEEP_ZSHRC=yes sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 fi
 ZSH_CUSTOM="${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}"
@@ -99,12 +99,12 @@ for pair in "zsh/home/.zshrc.local.example:.zshrc.local" "git/home/.gitconfig.lo
   src="$DOTFILES/${pair%%:*}"; dest="$HOME/${pair#*:}"
   if [ ! -f "$dest" ]; then
     cp "$src" "$dest"
-    echo "Criado $dest — preencha com seus dados."
+    echo "Created $dest — fill in your details."
   fi
 done
 
 if [ "$(basename "${SHELL:-}")" != "zsh" ]; then
-  echo "Seu shell padrão não é o zsh. Para trocar: chsh -s \"$(command -v zsh)\""
+  echo "Your default shell is not zsh. To switch: chsh -s \"$(command -v zsh)\""
 fi
 
-echo "Feito! Reinicie o terminal e rode prefix + I no tmux para instalar os plugins."
+echo "Done! Restart the terminal and press prefix + I in tmux to install the plugins."
