@@ -103,4 +103,8 @@ for pair in "zsh/home/.zshrc.local.example:.zshrc.local" "git/home/.gitconfig.lo
   fi
 done
 
+if [ "$(basename "${SHELL:-}")" != "zsh" ]; then
+  echo "Seu shell padrão não é o zsh. Para trocar: chsh -s \"$(command -v zsh)\""
+fi
+
 echo "Feito! Reinicie o terminal e rode prefix + I no tmux para instalar os plugins."
