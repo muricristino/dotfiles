@@ -15,17 +15,17 @@ shell-integration-features = cursor,sudo,no-title
 macos-option-as-alt = true
 
 # Explicit keybindings for Option+arrow to send xterm sequences for tmux
-# Fix cedilha — overrides macos-option-as-alt for just this key
+# Fix cedilla — overrides macos-option-as-alt for just this key
 keybind = alt+c=text:ç
 keybind = alt+shift+c=text:Ç
 
-# Shift+Enter envia ESC+CR: nova linha no zsh sem executar (o zsh sozinho não
-# distingue shift+enter de enter). Claude Code também aceita essa sequência.
+# Shift+Enter sends ESC+CR: newline in zsh without executing (zsh alone can't
+# tell shift+enter from enter). Claude Code accepts this sequence too.
 keybind = shift+enter=text:\x1b\x0d
 
-# Cmd+V manda o byte do Ctrl+V (0x16) em vez de colar pelo terminal: assim a
-# tecla chega no app, e o Claude Code lê o pasteboard sozinho (imagem inclusa).
-# O paste nativo, só-texto, fica no Cmd+Shift+V.
+# Cmd+V sends the Ctrl+V byte (0x16) instead of pasting via the terminal, so the
+# key reaches the app and Claude Code reads the pasteboard itself (images included).
+# Native text-only paste stays on Cmd+Shift+V.
 keybind = super+v=text:\x16
 keybind = super+shift+v=paste_from_clipboard
 
