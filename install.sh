@@ -4,6 +4,17 @@ set -e
 
 DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# --claude: também instala a config do Claude Code (settings base)
+# --personal: config do Claude Code do dono do repo (hooks do codo + sync automático)
+CLAUDE=""
+for arg in "$@"; do
+  case "$arg" in
+    --claude)   CLAUDE=base ;;
+    --personal) CLAUDE=personal ;;
+    *) echo "uso: $0 [--claude | --personal]"; exit 2 ;;
+  esac
+done
+
 echo "Dotfiles: $DOTFILES"
 
 # Dependencies
@@ -39,11 +50,15 @@ done
 [ -d "$HOME/.tmux/plugins/tpm" ] || git clone --depth 1 https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
 
 # Packages to stow (skip ghostty and nvim on Linux if not relevant)
-PACKAGES=(zsh git tmux claude)
+PACKAGES=(zsh git tmux)
+[ -n "$CLAUDE" ] && PACKAGES+=(claude)
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
   PACKAGES+=(ghostty nvim)
 fi
+
+# Shared parents must be real dirs, or stow folds them into the first package
+mkdir -p "$HOME/.config" "$HOME/.claude"
 
 for pkg in "${PACKAGES[@]}"; do
   echo "Stowing $pkg..."
@@ -59,6 +74,14 @@ for pkg in "${PACKAGES[@]}"; do
   done
   stow --dir="$DOTFILES/$pkg" --target="$HOME" --restow home
 done
+
+# Claude Code settings: link, not stow, so edits made by Claude Code land in the repo
+if [ -n "$CLAUDE" ]; then
+  settings="$HOME/.claude/settings.json"
+  [ -e "$settings" ] && [ ! -L "$settings" ] && mv "$settings" "$settings.bak" && echo "  backup: $settings -> $settings.bak"
+  ln -sfn "$DOTFILES/claude/settings/$CLAUDE.json" "$settings"
+  echo "Claude Code settings: $CLAUDE"
+fi
 
 # Machine-specific files from examples (not tracked)
 for pair in "zsh/home/.zshrc.local.example:.zshrc.local" "git/home/.gitconfig.local.example:.gitconfig.local"; do
