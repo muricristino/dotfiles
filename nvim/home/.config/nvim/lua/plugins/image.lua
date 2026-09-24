@@ -1,6 +1,9 @@
 return {
   "3rd/image.nvim",
   event = "VeryLazy",
+  -- sem build: o processor magick_cli dispensa o luarock, e o build via
+  -- luarocks/hererocks falha em máquinas sem toolchain Lua (ex.: Linux limpo)
+  build = false,
   opts = {
     -- Ghostty fala o protocolo de imagem do Kitty
     backend = "kitty",
