@@ -1,6 +1,8 @@
 # dotfiles
 
-Personal config for macOS (Linux works for the shell, git and tmux), managed with [GNU Stow](https://www.gnu.org/software/stow/).
+Personal config for macOS and Linux, managed with [GNU Stow](https://www.gnu.org/software/stow/).
+
+[![install](https://github.com/muricristino/dotfiles/actions/workflows/install.yml/badge.svg)](https://github.com/muricristino/dotfiles/actions/workflows/install.yml)
 
 ## Structure
 
@@ -18,16 +20,16 @@ dotfiles/
 
 ## Installation
 
-Requires [Homebrew](https://brew.sh).
+Uses [Homebrew](https://brew.sh) on macOS and Linux. On Linux without Homebrew, it falls back to `apt` or `dnf`, but the distro's neovim is usually too old for LazyVim.
 
 ```bash
 git clone <repo> ~/code/dotfiles
 cd ~/code/dotfiles
-./install.sh              # shell, git, tmux, nvim, ghostty
+./install.sh              # zsh, git, tmux, nvim, ghostty
 ./install.sh --claude     # + Claude Code config with base settings
 ```
 
-`install.sh` installs the Brewfile, Oh My Zsh with its plugins and TPM, then stows every package. Existing files that would conflict are moved to `<file>.bak`.
+`install.sh` installs the dependencies, Oh My Zsh with its plugins and TPM, then stows every package. Existing files that would conflict are moved to `<file>.bak`. CI runs it on macOS, Ubuntu with Homebrew and Ubuntu with apt on every push.
 
 ## Machine-specific config
 
