@@ -69,7 +69,7 @@ sel=$(tac "$dir/index" | fzf --ansi --delimiter=$'\t' --with-nth=2.. --no-sort -
 [[ -n "$sel" ]] || exit 0
 
 n=$(cut -f1 <<<"$sel")
-pbcopy < "$dir/$n.txt"
+~/.config/tmux/clip.sh copy < "$dir/$n.txt"
 lines=$(wc -l < "$dir/$n.txt" | tr -d ' ')
 chars=$(wc -c < "$dir/$n.txt" | tr -d ' ')
 tmux display-message "$(printf '\xef\x83\x85') copiado do transcript · $((lines+1)) linha(s) · ${chars} chars"

@@ -98,7 +98,7 @@ END {
   }
 }')
 
-printf '%s' "$OUT" | pbcopy
+printf '%s' "$OUT" | ~/.config/tmux/clip.sh copy
 
 in_l=$(printf '%s\n' "$IN"  | grep -c '')
 out_l=$(printf '%s'  "$OUT" | grep -c '')
