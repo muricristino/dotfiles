@@ -1,6 +1,6 @@
 # dotfiles
 
-Personal config for macOS, managed with [GNU Stow](https://www.gnu.org/software/stow/).
+Personal config for macOS (Linux works for the shell, git and tmux), managed with [GNU Stow](https://www.gnu.org/software/stow/).
 
 ## Structure
 
@@ -11,7 +11,8 @@ dotfiles/
 ├── tmux/       → ~/.tmux.conf, ~/.config/tmux/
 ├── ghostty/    → ~/.config/ghostty/ (config, theme, icon)
 ├── nvim/       → ~/.config/nvim/ (LazyVim)
-├── claude/     → ~/.claude/ (settings.json, CLAUDE.md, scripts/, skills/)
+├── claude/     → ~/.claude/ (CLAUDE.md, scripts/, skills/), optional
+│   └── settings/   base.json or personal.json → ~/.claude/settings.json
 └── Brewfile    → dependencies
 ```
 
@@ -22,7 +23,8 @@ Requires [Homebrew](https://brew.sh).
 ```bash
 git clone <repo> ~/code/dotfiles
 cd ~/code/dotfiles
-./install.sh
+./install.sh              # shell, git, tmux, nvim, ghostty
+./install.sh --claude     # + Claude Code config with base settings
 ```
 
 `install.sh` installs the Brewfile, Oh My Zsh with its plugins and TPM, then stows every package. Existing files that would conflict are moved to `<file>.bak`.
@@ -39,7 +41,11 @@ These files are not tracked. `install.sh` creates them from the examples:
 
 ## Claude Code
 
-`~/.claude/skills` is a link into this repo, so a skill created on this machine lands here. Commit and push it, and every other machine picks it up: a `SessionStart` hook runs `git pull` on the dotfiles in the background.
+The `claude` package is opt-in. `--claude` links `settings/base.json`, which has no hooks and no account-specific values. `--personal` links `settings/personal.json` instead: my own setup, with hooks for [codo](https://codo.axolutions.com.br) and the sync described below. It needs tools that aren't in this repo, so don't use it on your machine.
+
+`~/.claude/settings.json` is a link to one of those files, so changes Claude Code writes to its settings land in the repo.
+
+`~/.claude/skills` is a link into this repo, so a skill created on this machine lands here. Commit and push it, and my other machines pick it up: in the personal settings, a `SessionStart` hook runs `git pull` on the dotfiles in the background.
 
 Skills that stay local are listed in `.gitignore`: work skills, third-party skills installed as links, and browser profiles.
 
